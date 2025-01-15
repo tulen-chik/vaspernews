@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { getSessionFromCookie } from '@/utils/cookies'
 import { supabase } from '@/lib/supabase'
-import { MultiSelect } from '@/components/ui/multi-select'
 
 interface Category {
     id: string
@@ -23,7 +22,7 @@ interface NewsEditorProps {
 
 export function NewsEditor({ news }: NewsEditorProps) {
     const router = useRouter()
-    const session = getSessionFromCookie()
+    const [session, setSession] = useState<any>(null)
     const [loading, setLoading] = useState(false)
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [categories, setCategories] = useState<Category[]>([])
@@ -32,6 +31,12 @@ export function NewsEditor({ news }: NewsEditorProps) {
     )
 
     useEffect(() => {
+        const fetchSession = () => {
+            const sessionData = getSessionFromCookie()
+            setSession(sessionData)
+        }
+
+        fetchSession()
         fetchCategories()
     }, [])
 
@@ -157,6 +162,7 @@ export function NewsEditor({ news }: NewsEditorProps) {
     }
 
     return (
+        <div className="flex justify-center w-screen">
         <Card className="p-6 bg-pink-50">
             <h1 className="text-2xl font-bold mb-6">
                 {news ? 'Редактировать публикацию' : 'Добавить публикацию'}
@@ -230,6 +236,6 @@ export function NewsEditor({ news }: NewsEditorProps) {
                 </div>
             </form>
         </Card>
+        </div>
     )
 }
-

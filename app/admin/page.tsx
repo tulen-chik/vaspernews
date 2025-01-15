@@ -112,7 +112,7 @@ export default function AdminPage() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Управление новостями</h1>
           <Button asChild>
-            <Link href="/admin/news/new">Создать новость</Link>
+            <Link href="/my/news/new">Создать новость</Link>
           </Button>
         </div>
         <Table>
