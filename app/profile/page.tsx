@@ -1,13 +1,12 @@
 'use client'
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { getSessionFromCookie } from '@/utils/cookies'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { getSessionFromCookie } from '@/utils/cookies'
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -20,7 +19,6 @@ export default function ProfilePage() {
   })
 
   useEffect(() => {
-    // Fetch session from cookies
     const sessionData = getSessionFromCookie()
     setSession(sessionData)
 
@@ -29,15 +27,15 @@ export default function ProfilePage() {
       return
     }
 
-    fetchProfile()
-    fetchStats()
-  }, [])
+    fetchProfile(sessionData.user.id)
+    fetchStats(sessionData.user.id)
+  }, [router])
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', session?.user?.id)
+        .eq('id', userId)
         .single()
 
     if (!error && data) {
@@ -45,22 +43,20 @@ export default function ProfilePage() {
     }
   }
 
-  const fetchStats = async () => {
-    if (!session?.user?.id) return
-
+  const fetchStats = async (userId: string) => {
     const [reactionsResponse, commentsResponse] = await Promise.all([
       supabase
           .from('reactions')
           .select('*', { count: 'exact' })
-          .eq('user_id', session.user.id),
+          .eq('user_id', userId),
       supabase
           .from('comments')
           .select('*', { count: 'exact' })
-          .eq('author_id', session.user.id),
+          .eq('author_id', userId),
     ])
 
     const daysOnSite = Math.ceil(
-        (Date.now() - new Date(session.user.created_at).getTime()) / (1000 * 60 * 60 * 24)
+        (Date.now() - new Date(session?.user?.created_at).getTime()) / (1000 * 60 * 60 * 24)
     )
 
     setStats({
@@ -70,11 +66,7 @@ export default function ProfilePage() {
     })
   }
 
-  if (!profile) {
-    return null
-  }
-
-  const initials = profile.full_name
+  const initials = profile?.full_name
       ?.split(' ')
       .map((n: string) => n[0])
       .join('')
@@ -83,11 +75,9 @@ export default function ProfilePage() {
   return (
       <div className="container py-4 md:py-6">
         <Tabs defaultValue="profile" className="space-y-4 md:space-y-6">
-          <ScrollArea className="w-full whitespace-nowrap">
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
 
           <TabsContent value="profile" className="space-y-4 md:space-y-6">
+
             <Card className="p-4 md:p-6">
               <h3 className="text-lg font-semibold mb-4">Активность</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
