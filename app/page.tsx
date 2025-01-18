@@ -114,9 +114,11 @@ export default function HomePage() {
         }))
 
         // Filter news based on selected category
+
         const filteredNews = selectedCategory
             ? newsDetails.filter(news =>
                 news.news_categories?.some(newsCategory =>
+                    // @ts-ignore
                     newsCategory.categories.id === selectedCategory
                 )
             )
