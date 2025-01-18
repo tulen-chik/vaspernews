@@ -68,7 +68,7 @@ export function NewsEditor({ news }: NewsEditorProps) {
 
         try {
             let imageUrl = news?.image_url
-
+            console.log(imageFile)
             if (imageFile) {
                 const fileExt = imageFile.name.split('.').pop()
                 const fileName = `${Math.random()}.${fileExt}`
