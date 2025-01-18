@@ -21,7 +21,23 @@ export default function NewsPage({ params }: { params: Promise<{ id: string }> }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [id, setId] = useState<string | null>(null)
-  const [session, setSession] = useState<any>(null)
+
+  const handleReaction = async (type: 'like' | 'dislike') => {
+    if (!news) return;
+
+    try {
+      const { data, error } = await supabase
+          .from('reactions')
+          .insert({ news_id: news.id, user_id: '1', type })
+          .single();
+
+      if (error) throw error;
+      setReactions([...reactions, data]);
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+    }
+  };
+
 
   useEffect(() => {
     const fetchParams = async () => {
@@ -30,14 +46,6 @@ export default function NewsPage({ params }: { params: Promise<{ id: string }> }
     }
     fetchParams()
   }, [params])
-
-  useEffect(() => {
-    const fetchSession = () => {
-      const currentSession = getSessionFromCookie()
-      setSession(currentSession)
-    }
-    fetchSession()
-  }, [])
 
   useEffect(() => {
     const fetchNewsData = async () => {
@@ -102,68 +110,6 @@ export default function NewsPage({ params }: { params: Promise<{ id: string }> }
     fetchNewsData()
   }, [id]) // Fetch news data when id changes
 
-  const handleReaction = async (reactionType: 'like' | 'dislike') => {
-    if (!session?.user) {
-      alert('Пожалуйста, авторизуйтесь для добавления реакции.')
-      return
-    }
-
-    try {
-      // Проверяем, есть ли уже реакция от пользователя
-      const { data: existingReaction } = await supabase
-          .from('reactions')
-          .select('*')
-          .eq('news_id', id)
-          .eq('user_id', session.user.id)
-          .single();
-
-      if (existingReaction) {
-        if (existingReaction.type === reactionType) {
-          // Удаляем реакцию, если она такая же
-          const { error: deleteError } = await supabase
-              .from('reactions')
-              .delete()
-              .eq('id', existingReaction.id);
-
-          if (deleteError) {
-            console.error('Error deleting reaction:', deleteError);
-          } else {
-            setReactions(prev => prev.filter(r => r.id !== existingReaction.id));
-          }
-        } else {
-          // Обновляем реакцию, если она отличается
-          const { error: updateError } = await supabase
-              .from('reactions')
-              .update({ type: reactionType })
-              .eq('id', existingReaction.id);
-
-          if (updateError) {
-            console.error('Error updating reaction:', updateError);
-          } else {
-            setReactions(prev => prev.map(r => r.id === existingReaction.id ? { ...r, type: reactionType } : r));
-          }
-        }
-      } else {
-        // Добавляем новую реакцию
-        const { error: insertError } = await supabase
-            .from('reactions')
-            .insert({
-              news_id: id,
-              user_id: session.user.id,
-              type: reactionType,
-            });
-
-        if (insertError) {
-          console.error('Error adding reaction:', insertError);
-        } else {
-          setReactions(prev => [...prev, { news_id: id, user_id: session.user.id, type: reactionType }]);
-        }
-      }
-    } catch (error) {
-      console.error('Error processing reaction:', error);
-    }
-  };
-
   if (loading) {
     return (
         <div className="max-w-md mx-auto">
@@ -185,12 +131,12 @@ export default function NewsPage({ params }: { params: Promise<{ id: string }> }
   }
 
   return (
-      <div className="container py-6">
+      <div className="container max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <Card className="overflow-hidden">
           <div className="p-6">
-            <h1 className="text-3xl font-bold mb-4">{news.title}</h1>
-            <div className="flex items-center text-sm text-muted-foreground mb-4">
-              <span>{author?.username}</span>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-4 text-gray-900">{news.title}</h1>
+            <div className="flex items-center text-sm text-gray-600 mb-6">
+              <span className="font-medium">{author?.username}</span>
               <span className="mx-2">•</span>
               <time>
                 {formatDistanceToNow(new Date(news.created_at), {
@@ -200,16 +146,16 @@ export default function NewsPage({ params }: { params: Promise<{ id: string }> }
               </time>
             </div>
             {news.image_url && (
-                <div className="relative aspect-video mb-6">
+                <div className="relative aspect-video mb-6 max-w-2xl mx-auto shadow-lg rounded-lg overflow-hidden">
                   <Image
-                      src={news.image_url}
+                      src={news.image_url || "/placeholder.svg"}
                       alt={news.title}
                       fill
-                      className="object-cover rounded-lg"
+                      className="object-cover"
                   />
                 </div>
             )}
-            <div className="prose max-w-none mb-6" dangerouslySetInnerHTML={{ __html: news.content }} />
+            <div className="prose prose-lg max-w-none mb-8" dangerouslySetInnerHTML={{ __html: news.content }} />
             {news.video_url && (
                 <div className="aspect-video mb-6">
                   <iframe
@@ -219,23 +165,23 @@ export default function NewsPage({ params }: { params: Promise<{ id: string }> }
                   />
                 </div>
             )}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-t border-gray-200 pt-4">
               <div className="flex items-center space-x-4">
-                <Button variant="ghost" size="sm" onClick={() => handleReaction('like')}>
+                <Button variant="outline" size="sm" onClick={() => handleReaction('like')}>
                   <ThumbsUp className="w-4 h-4 mr-2" />
                   {reactions.filter((r: any) => r.type === 'like').length}
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleReaction('dislike')}>
+                <Button variant="outline" size="sm" onClick={() => handleReaction('dislike')}>
                   <ThumbsDown className="w-4 h-4 mr-2" />
                   {reactions.filter((r: any) => r.type === 'dislike').length}
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button variant="outline" size="sm">
                   <MessageSquare className="w-4 h-4 mr-2" />
                   {comments.length}
                 </Button>
               </div>
               <ShareDialog url={`/news/${news.id}`}>
-                <Button variant="ghost" size="sm">
+                <Button variant="outline" size="sm">
                   <Share2 className="w-4 h-4 mr-2" />
                   Поделиться
                 </Button>
@@ -247,3 +193,4 @@ export default function NewsPage({ params }: { params: Promise<{ id: string }> }
       </div>
   )
 }
+
