@@ -17,7 +17,7 @@ Vasper News — это современное веб-приложение для
 Клонируйте репозиторий:
 bash
 Copy
-git clone https://github.com/ваш-username/vasper-news.git
+git clone https://github.com/tulen-chik/vaspernews
 Установите зависимости:
 
 bash
