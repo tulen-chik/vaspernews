@@ -162,7 +162,6 @@ export function NewsEditor({ news }: NewsEditorProps) {
     }
 
     return (
-        <div className="flex justify-center w-screen">
         <Card className="p-6 bg-pink-50">
             <h1 className="text-2xl font-bold mb-6">
                 {news ? 'Редактировать публикацию' : 'Добавить публикацию'}
@@ -236,6 +235,5 @@ export function NewsEditor({ news }: NewsEditorProps) {
                 </div>
             </form>
         </Card>
-        </div>
     )
 }
